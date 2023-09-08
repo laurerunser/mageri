@@ -1,3 +1,3 @@
 (executable
  (name mageri)
- (libraries uri ssl))
+ (libraries uri ssl str))
