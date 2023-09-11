@@ -48,10 +48,18 @@ let create_socket (ip_addr : inet_addr) port : Ssl.socket =
 
      (* return the socket*)
      Printf.printf "socket created and connection opened\n%!"; *)
-  let ctx = Ssl.create_context Ssl.SSLv23 Ssl.Client_context in
-  Ssl.set_verify ctx [ Ssl.Verify_peer ] (Some Ssl.client_verify_callback);
-  Ssl.set_verify_depth ctx 3;
-  Ssl.open_connection_with_context ctx sockaddr
+  let ctx = Ssl.create_context Ssl.TLSv1_3 Ssl.Client_context in
+   Ssl.set_client_verify_callback_verbose true;
+  Ssl.set_verify ctx [] None;
+  (* Ssl.set_verify ctx [ Ssl.Verify_peer ] (Some Ssl.client_verify_callback);
+  Ssl.set_verify_depth ctx 3; *)
+  Printf.printf "before opening connection\n%!";
+  Printf.printf "opening sock to %s:%d...\n%!"
+  (Unix.string_of_inet_addr ip_addr)
+  port;
+  let socket = Ssl.open_connection_with_context ctx sockaddr in 
+  Printf.printf "created socket\n%!";
+  socket
 
 let get_sockfd (url : Uri.t) : Ssl.socket =
   (* get the server's ip*)
@@ -112,7 +120,8 @@ let read_body (sockfd : Ssl.socket) : string =
     let len =
       try Ssl.read sockfd bytes_buf 0 (Bytes.length bytes_buf)
       with _ ->
-        failwith (Printf.sprintf "SSL error : %s" (Ssl.get_error_string ()))
+        failwith (Printf.sprintf "SSL error" )
+        (* todo: print nice error message: (Ssl.Error.(Ssl.Error.get_error ()) gets the error; need to write a to_string function for it *)
     in
     if len = 0 then continue := false
     else Buffer.add_subbytes buf bytes_buf 0 len
@@ -229,4 +238,4 @@ let main_loop str =
       Printf.printf "Body received. Printing now\n%!";
       print_string body
 
-let () = main_loop "gemini://ploum.net"
+let () = main_loop "gemini://skyjake.fi"
